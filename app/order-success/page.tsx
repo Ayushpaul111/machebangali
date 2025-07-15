@@ -1,49 +1,49 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Download } from "lucide-react"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, Download } from "lucide-react";
+import Link from "next/link";
 
 interface OrderData {
-  id: string
+  id: string;
   items: Array<{
-    name: string
-    quantity: number
-    weight: string
-    price: number
-  }>
+    name: string;
+    quantity: number;
+    weight: string;
+    price: number;
+  }>;
   customer: {
-    name: string
-    phone: string
-    address: string
-    deliveryTime: string
-    notes: string
-  }
-  total: number
-  deliveryCharge: number
-  subtotal: number
-  orderDate: string
-  status: string
+    name: string;
+    phone: string;
+    address: string;
+    deliveryTime: string;
+    notes: string;
+  };
+  total: number;
+  deliveryCharge: number;
+  subtotal: number;
+  orderDate: string;
+  status: string;
 }
 
 export default function OrderSuccessPage() {
-  const [orderData, setOrderData] = useState<OrderData | null>(null)
+  const [orderData, setOrderData] = useState<OrderData | null>(null);
 
   useEffect(() => {
-    const storedOrder = localStorage.getItem("lastOrder")
+    const storedOrder = localStorage.getItem("lastOrder");
     if (storedOrder) {
-      setOrderData(JSON.parse(storedOrder))
+      setOrderData(JSON.parse(storedOrder));
     }
-  }, [])
+  }, []);
 
   const handleDownloadReceipt = () => {
-    if (!orderData) return
+    if (!orderData) return;
 
     // Create a simple text receipt
     const receipt = `
-FRESHMART - ORDER RECEIPT
+Mache Bangali - ORDER RECEIPT
 ========================
 
 Order ID: ${orderData.id}
@@ -58,7 +58,12 @@ Delivery Time: ${orderData.customer.deliveryTime}
 
 ITEMS ORDERED:
 ${orderData.items
-  .map((item) => `${item.name} (${item.weight}) x${item.quantity} - ₹${(item.price * item.quantity).toFixed(2)}`)
+  .map(
+    (item) =>
+      `${item.name} (${item.weight}) x${item.quantity} - ₹${(
+        item.price * item.quantity
+      ).toFixed(2)}`
+  )
   .join("\n")}
 
 BILL SUMMARY:
@@ -67,18 +72,18 @@ Delivery Charge: ₹${orderData.deliveryCharge.toFixed(2)}
 Total: ₹${orderData.total.toFixed(2)}
 
 Thank you for your order!
-    `
+    `;
 
-    const blob = new Blob([receipt], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `FreshMart-Receipt-${orderData.id}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([receipt], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Mache Bangali-Receipt-${orderData.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   if (!orderData) {
     return (
@@ -90,7 +95,7 @@ Thank you for your order!
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -99,8 +104,12 @@ Thank you for your order!
         {/* Success Header */}
         <div className="text-center mb-8">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-green-600 mb-2">Order Confirmed!</h1>
-          <p className="text-gray-600">Thank you for your order. We'll deliver fresh to your doorstep.</p>
+          <h1 className="text-3xl font-bold text-green-600 mb-2">
+            Order Confirmed!
+          </h1>
+          <p className="text-gray-600">
+            Thank you for your order. We'll deliver fresh to your doorstep.
+          </p>
         </div>
 
         {/* Order Details */}
@@ -128,7 +137,8 @@ Thank you for your order!
                   <strong>Address:</strong> {orderData.customer.address}
                 </p>
                 <p>
-                  <strong>Delivery Time:</strong> {orderData.customer.deliveryTime}
+                  <strong>Delivery Time:</strong>{" "}
+                  {orderData.customer.deliveryTime}
                 </p>
                 {orderData.customer.notes && (
                   <p>
@@ -143,14 +153,19 @@ Thank you for your order!
               <h3 className="font-semibold mb-3">Items Ordered</h3>
               <div className="space-y-3">
                 {orderData.items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b">
+                  <div
+                    key={index}
+                    className="flex justify-between items-center py-2 border-b"
+                  >
                     <div>
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-gray-600">
                         {item.weight} × {item.quantity}
                       </p>
                     </div>
-                    <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-semibold">
+                      ₹{(item.price * item.quantity).toFixed(2)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -179,7 +194,11 @@ Thank you for your order!
 
         {/* Action Buttons */}
         <div className="space-y-4">
-          <Button onClick={handleDownloadReceipt} className="w-full bg-transparent" variant="outline">
+          <Button
+            onClick={handleDownloadReceipt}
+            className="w-full bg-transparent"
+            variant="outline"
+          >
             <Download className="h-4 w-4 mr-2" />
             Download Receipt
           </Button>
@@ -195,7 +214,9 @@ Thank you for your order!
               </Button>
             </Link>
             <Link href="/track-order">
-              <Button className="w-full bg-red-600 hover:bg-red-700">Track Order</Button>
+              <Button className="w-full bg-red-600 hover:bg-red-700">
+                Track Order
+              </Button>
             </Link>
           </div>
         </div>
@@ -205,7 +226,9 @@ Thank you for your order!
           <CardContent className="p-4">
             <h3 className="font-semibold mb-2">What's Next?</h3>
             <div className="space-y-2 text-sm text-gray-600">
-              <p>🚚 Your order will be delivered during your selected time slot</p>
+              <p>
+                🚚 Your order will be delivered during your selected time slot
+              </p>
               <p>📞 Our delivery partner will call you before arrival</p>
               <p>💰 Payment will be collected on delivery (Cash/UPI)</p>
               <p>🔄 Easy returns if you're not satisfied</p>
@@ -214,5 +237,5 @@ Thank you for your order!
         </Card>
       </div>
     </div>
-  )
+  );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import Link from "next/link";
 import { Search, ShoppingCart, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -87,9 +86,14 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // Close menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [router]);
+
   // Handle search suggestions
   useEffect(() => {
-    if (searchQuery.trim().length > 0) {
+    if (searchQuery.trim()) {
       const filtered = allProducts.filter(
         (product) =>
           product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -97,14 +101,13 @@ export default function Header() {
           product.subcategory.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setSearchSuggestions(filtered.slice(0, 5));
-      setShowSuggestions(true);
     } else {
       setSearchSuggestions([]);
       setShowSuggestions(false);
     }
   }, [searchQuery]);
 
-  // Close suggestions when clicking outside
+  // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -119,39 +122,79 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Prevent body scroll when menu is open and close menu on escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.body.style.overflow = "hidden";
+      document.addEventListener("keydown", handleKeyDown);
+    } else {
+      document.body.style.overflow = "unset";
+    }
+
+    return () => {
+      document.body.style.overflow = "unset";
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setShowSuggestions(false);
-      setSearchQuery("");
+      setIsMenuOpen(false);
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
   const handleSuggestionClick = (productId: string) => {
-    router.push(`/product/${productId}`);
     setShowSuggestions(false);
     setSearchQuery("");
+    setIsMenuOpen(false);
+    router.push(`/product/${productId}`);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearchSubmit(e);
+    }
   };
 
   return (
-    <header className="bg-white shadow-lg sticky top-0 z-50 transition-all duration-300">
+    <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link
             href="/"
-            className="text-xl sm:text-2xl font-bold text-red-600 hover:text-red-700 transition-colors duration-200"
+            className="flex items-center space-x-2 flex-shrink-0"
+            onClick={closeMenu}
           >
-            FreshMart
+            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-red-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg lg:text-xl">
+                🥩
+              </span>
+            </div>
+            <span className="text-lg lg:text-xl font-bold text-gray-800 hidden sm:block">
+              Mache Bangali
+            </span>
           </Link>
 
-          {/* Search Bar - Hidden on mobile, shown on tablet+ */}
+          {/* Desktop Search */}
           <div
-            className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-8 relative"
+            className="hidden lg:flex flex-1 max-w-md mx-8 relative"
             ref={searchRef}
           >
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 type="search"
@@ -160,24 +203,17 @@ export default function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => searchQuery && setShowSuggestions(true)}
+                onKeyDown={handleKeyDown}
               />
 
-              {/* Search Suggestions */}
+              {/* Desktop Search Suggestions */}
               {showSuggestions && searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-xl mt-1 max-h-60 overflow-y-auto z-[60] animate-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-xl mt-1 max-h-60 overflow-y-auto z-[70] animate-in slide-in-from-top-2 duration-200">
                   {searchSuggestions.map((product) => (
                     <div
                       key={product.id}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleSuggestionClick(product.id);
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSuggestionClick(product.id);
-                      }}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 cursor-pointer select-none"
+                      onClick={() => handleSuggestionClick(product.id)}
+                      className="px-4 py-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 cursor-pointer"
                     >
                       <div className="font-medium text-gray-900">
                         {product.name}
@@ -189,10 +225,10 @@ export default function Header() {
                   ))}
                 </div>
               )}
-            </form>
+            </div>
           </div>
 
-          {/* Navigation Links - Hidden on mobile */}
+          {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-8">
             <Link
               href="/category/meat"
@@ -212,7 +248,7 @@ export default function Header() {
 
           {/* Cart and Mobile Menu */}
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link href="/cart">
+            <Link href="/cart" onClick={closeMenu}>
               <Button
                 variant="outline"
                 className="relative bg-transparent hover:bg-red-50 hover:border-red-300 transition-all duration-200 p-2 sm:px-4"
@@ -233,8 +269,9 @@ export default function Header() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden hover:bg-red-50 transition-colors duration-200"
+              className="lg:hidden hover:bg-red-50 transition-colors duration-200 relative z-[60]"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMenuOpen ? (
                 <X className="h-5 w-5" />
@@ -245,44 +282,46 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+            onClick={closeMenu}
+          />
+        )}
+
+        {/* Mobile Menu - FIXED VERSION */}
         <div
-          className={`lg:hidden transition-all duration-300 ease-in-out ${
-            isMenuOpen ? "max-h-[80vh] opacity-100" : "max-h-0 opacity-0"
-          } overflow-visible`}
+          className={`lg:hidden fixed top-16 left-0 right-0 bg-white border-t shadow-lg z-50 transition-all duration-300 ease-in-out ${
+            isMenuOpen
+              ? "translate-y-0 opacity-100 pointer-events-auto"
+              : "-translate-y-full opacity-0 pointer-events-none"
+          }`}
+          style={{ maxHeight: "calc(100vh - 4rem)" }}
         >
-          <div className="py-4 border-t space-y-4 relative">
+          <div className="p-4 space-y-6 overflow-y-auto max-h-full">
             {/* Mobile Search */}
-            <div className="relative z-50" ref={searchRef}>
-              <form onSubmit={handleSearchSubmit} className="relative">
+            <div className="relative">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   type="search"
                   placeholder="Search for meat, fish..."
-                  className="pl-10 pr-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
+                  className="pl-10 pr-4 h-12 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => searchQuery && setShowSuggestions(true)}
+                  onKeyDown={handleKeyDown}
                 />
 
                 {/* Mobile Search Suggestions */}
                 {showSuggestions && searchSuggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-xl mt-1 max-h-48 overflow-y-auto z-[60] animate-in slide-in-from-top-2 duration-200">
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-xl mt-1 max-h-48 overflow-y-auto z-[70] animate-in slide-in-from-top-2 duration-200">
                     {searchSuggestions.map((product) => (
                       <div
                         key={product.id}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleSuggestionClick(product.id);
-                          setIsMenuOpen(false);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleSuggestionClick(product.id);
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 cursor-pointer select-none"
+                        onClick={() => handleSuggestionClick(product.id)}
+                        className="px-4 py-3 hover:bg-gray-50 transition-colors duration-150 border-b border-gray-100 last:border-b-0 cursor-pointer"
                       >
                         <div className="font-medium text-gray-900">
                           {product.name}
@@ -294,25 +333,121 @@ export default function Header() {
                     ))}
                   </div>
                 )}
-              </form>
+              </div>
             </div>
 
             {/* Mobile Navigation Links */}
-            <div className="flex flex-col space-y-3">
+            <div className="space-y-3">
               <Link
                 href="/category/meat"
-                className="text-gray-700 hover:text-red-600 py-2 px-2 rounded-md hover:bg-red-50 transition-all duration-200 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center text-gray-700 hover:text-red-600 py-3 px-4 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium text-lg"
+                onClick={closeMenu}
               >
-                🥩 Fresh Meat
+                <span className="mr-3">🥩</span>
+                Fresh Meat
               </Link>
               <Link
                 href="/category/fish"
-                className="text-gray-700 hover:text-red-600 py-2 px-2 rounded-md hover:bg-red-50 transition-all duration-200 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center text-gray-700 hover:text-red-600 py-3 px-4 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium text-lg"
+                onClick={closeMenu}
               >
-                🐟 Fresh Fish
+                <span className="mr-3">🐟</span>
+                Fresh Fish
               </Link>
+            </div>
+
+            {/* Mobile Cart Summary - Dynamic */}
+            {getTotalItems() > 0 && (
+              <div className="border-t pt-4">
+                <div className="bg-red-50 p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm text-gray-600">Cart Total</p>
+                      <p className="text-lg font-bold text-red-600">
+                        ₹{getTotalPrice().toFixed(0)}
+                      </p>
+                    </div>
+                    <Badge className="bg-red-600 text-white px-2 py-1">
+                      {getTotalItems()} item{getTotalItems() > 1 ? "s" : ""}
+                    </Badge>
+                  </div>
+
+                  {/* Cart Items Preview */}
+                  <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
+                    {items.slice(0, 3).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-center text-sm"
+                      >
+                        <span className="text-gray-700 truncate flex-1 mr-2">
+                          {item.name} ({item.weight})
+                        </span>
+                        <span className="text-gray-900 font-medium">
+                          {item.quantity}x ₹{item.price}
+                        </span>
+                      </div>
+                    ))}
+                    {items.length > 3 && (
+                      <div className="text-xs text-gray-500 text-center">
+                        +{items.length - 3} more item
+                        {items.length - 3 > 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    className="w-full bg-red-600 hover:bg-red-700"
+                    onClick={() => {
+                      closeMenu();
+                      router.push("/cart");
+                    }}
+                  >
+                    View Cart & Checkout
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Quick Actions */}
+            <div className="border-t pt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="flex items-center justify-center py-3 text-sm"
+                  onClick={() => {
+                    closeMenu();
+                    router.push("/orders");
+                  }}
+                >
+                  <span className="mr-2">📦</span>
+                  Orders
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex items-center justify-center py-3 text-sm"
+                  onClick={() => {
+                    closeMenu();
+                    router.push("/profile");
+                  }}
+                >
+                  <span className="mr-2">👤</span>
+                  Profile
+                </Button>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div className="border-t pt-4">
+              <div className="text-center text-sm text-gray-600">
+                <p>Need help? Call us:</p>
+                <a
+                  href="tel:+911234567890"
+                  className="text-red-600 font-medium hover:text-red-700"
+                  onClick={closeMenu}
+                >
+                  +91 123 456 7890
+                </a>
+              </div>
             </div>
           </div>
         </div>
