@@ -1,151 +1,73 @@
-"use client"
+// app/search/page.tsx
+"use client";
 
-import type React from "react"
-
-import { useSearchParams } from "next/navigation"
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
-
-// Sample product data - in a real app, this would come from an API
-const allProducts = [
-  {
-    id: "chicken-breast",
-    name: "Chicken Breast",
-    image: "/placeholder.png",
-    price: 180,
-    description: "Tender and juicy chicken breast, perfect for grilling",
-    subcategory: "Chicken",
-    category: "meat",
-  },
-  {
-    id: "chicken-thigh",
-    name: "Chicken Thigh",
-    image: "/placeholder.png",
-    price: 160,
-    description: "Flavorful chicken thigh with bone",
-    subcategory: "Chicken",
-    category: "meat",
-  },
-  {
-    id: "mutton-curry-cut",
-    name: "Mutton Curry Cut",
-    image: "/placeholder.png",
-    price: 450,
-    description: "Fresh mutton cut perfect for curries",
-    subcategory: "Mutton",
-    category: "meat",
-  },
-  {
-    id: "mutton-chops",
-    name: "Mutton Chops",
-    image: "/placeholder.png",
-    price: 480,
-    description: "Premium mutton chops for special occasions",
-    subcategory: "Mutton",
-    category: "meat",
-  },
-  {
-    id: "beef-steak",
-    name: "Beef Steak",
-    image: "/placeholder.png",
-    price: 380,
-    description: "Premium beef steak cuts",
-    subcategory: "Beef",
-    category: "meat",
-  },
-  {
-    id: "pork-chops",
-    name: "Pork Chops",
-    image: "/placeholder.png",
-    price: 320,
-    description: "Fresh pork chops",
-    subcategory: "Pork",
-    category: "meat",
-  },
-  {
-    id: "rohu-fish",
-    name: "Rohu Fish",
-    image: "/placeholder.png",
-    price: 120,
-    description: "Fresh water rohu fish, cleaned and cut",
-    subcategory: "Rohu",
-    category: "fish",
-  },
-  {
-    id: "katla-fish",
-    name: "Katla Fish",
-    image: "/placeholder.png",
-    price: 140,
-    description: "Fresh katla fish pieces",
-    subcategory: "Katla",
-    category: "fish",
-  },
-  {
-    id: "prawns-medium",
-    name: "Medium Prawns",
-    image: "/placeholder.png",
-    price: 280,
-    description: "Fresh medium-sized prawns",
-    subcategory: "Prawns",
-    category: "fish",
-  },
-  {
-    id: "prawns-large",
-    name: "Large Prawns",
-    image: "/placeholder.png",
-    price: 350,
-    description: "Premium large prawns",
-    subcategory: "Prawns",
-    category: "fish",
-  },
-  {
-    id: "salmon-fillet",
-    name: "Salmon Fillet",
-    image: "/placeholder.png",
-    price: 450,
-    description: "Fresh salmon fillet",
-    subcategory: "Salmon",
-    category: "fish",
-  },
-]
+import type React from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Search, ArrowLeft } from "lucide-react";
+import { useProducts } from "../context/ProductContext";
+import { Product } from "@/types/product";
 
 export default function SearchPage() {
-  const searchParams = useSearchParams()
-  const query = searchParams.get("q") || ""
-  const [searchResults, setSearchResults] = useState<typeof allProducts>([])
-  const [currentQuery, setCurrentQuery] = useState(query)
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q") || "";
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [currentQuery, setCurrentQuery] = useState(query);
+  const { searchProducts, loading } = useProducts();
 
   useEffect(() => {
-    if (query) {
-      const filtered = allProducts.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query.toLowerCase()) ||
-          product.category.toLowerCase().includes(query.toLowerCase()) ||
-          product.subcategory.toLowerCase().includes(query.toLowerCase()) ||
-          product.description.toLowerCase().includes(query.toLowerCase()),
-      )
-      setSearchResults(filtered)
+    if (query && !loading) {
+      const results = searchProducts(query);
+      setSearchResults(results);
+    } else if (!query) {
+      setSearchResults([]);
     }
-  }, [query])
+  }, [query, searchProducts, loading]);
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (currentQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(currentQuery.trim())}`
+      window.location.href = `/search?q=${encodeURIComponent(
+        currentQuery.trim()
+      )}`;
     }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 sm:py-8">
+        {/* Back Button */}
+        <div className="mb-6 sm:mb-8">
+          <Link href="/">
+            <button className="flex items-center hover:bg-red-50 transition-colors duration-200 px-2 py-1 rounded-md text-sm sm:text-base">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </button>
+          </Link>
+        </div>
+
         {/* Search Header */}
         <div className="mb-6 sm:mb-8">
-          <form onSubmit={handleSearch} className="relative max-w-md mx-auto mb-4">
+          <form
+            onSubmit={handleSearch}
+            className="relative max-w-md mx-auto mb-4"
+          >
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               type="search"
@@ -157,10 +79,13 @@ export default function SearchPage() {
           </form>
 
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Search Results</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+              Search Results
+            </h1>
             {query && (
               <p className="text-gray-600">
-                {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} found for "{query}"
+                {searchResults.length} result
+                {searchResults.length !== 1 ? "s" : ""} found for "{query}"
               </p>
             )}
           </div>
@@ -182,17 +107,34 @@ export default function SearchPage() {
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <Badge className="absolute top-2 left-2 bg-red-600 hover:bg-red-700">{product.subcategory}</Badge>
+                    <Badge className="absolute top-2 left-2 bg-red-600 hover:bg-red-700">
+                      {product.subcategory}
+                    </Badge>
+                    <Badge className="absolute top-2 right-2 bg-gray-800 text-white">
+                      {product.category}
+                    </Badge>
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold mb-2 text-sm sm:text-base group-hover:text-red-600 transition-colors duration-200">
                       {product.name}
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold text-red-600">₹{product.price}</span>
-                      <span className="text-xs sm:text-sm text-gray-500">per 250g</span>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                      {product.description}
+                    </p>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-lg font-bold text-red-600">
+                        ₹{product.price}
+                      </span>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {product.unit}
+                      </span>
                     </div>
+                    {product.rating > 0 && (
+                      <div className="flex items-center text-xs text-gray-500">
+                        <span className="text-yellow-500 mr-1">★</span>
+                        {product.rating}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>
@@ -200,33 +142,39 @@ export default function SearchPage() {
           </div>
         ) : query ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-2">No results found</h2>
-            <p className="text-gray-600 mb-6">Try searching with different keywords</p>
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Popular searches:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {["Chicken", "Fish", "Mutton", "Prawns"].map((term) => (
-                  <Link key={term} href={`/search?q=${term}`}>
-                    <Badge
-                      variant="outline"
-                      className="cursor-pointer hover:bg-red-50 hover:border-red-300 transition-colors duration-200"
-                    >
-                      {term}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
+            <div className="text-gray-400 mb-4">
+              <Search className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              No results found
+            </h3>
+            <p className="text-gray-500 mb-6">
+              We couldn't find any products matching "{query}". Try searching
+              with different keywords.
+            </p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <p>Suggestions:</p>
+              <ul className="space-y-1">
+                <li>• Check your spelling</li>
+                <li>• Use more general terms</li>
+                <li>• Try searching for "chicken", "fish", or "meat"</li>
+              </ul>
             </div>
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🛒</div>
-            <h2 className="text-xl sm:text-2xl font-semibold mb-2">Start your search</h2>
-            <p className="text-gray-600">Find fresh meat and fish products</p>
+            <div className="text-gray-400 mb-4">
+              <Search className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Search for products
+            </h3>
+            <p className="text-gray-500">
+              Enter a search term above to find fresh meat and fish products.
+            </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

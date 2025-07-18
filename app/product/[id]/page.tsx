@@ -1,315 +1,382 @@
-"use client"
+// app/product/[id]/page.tsx
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useCart } from "../../context/CartContext"
-import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, Star, ShoppingCart, Plus, Minus } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, use } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCart } from "../../context/CartContext";
+import { useProducts } from "../../context/ProductContext";
+import { useToast } from "@/hooks/use-toast";
+import {
+  ArrowLeft,
+  Star,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Loader2,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Product } from "@/types/product";
 
-// Sample product data - in a real app, this would come from an API
-const productData: Record<string, any> = {
-  "chicken-breast": {
-    id: "chicken-breast",
-    name: "Chicken Breast",
-    category: "meat",
-    subcategory: "Chicken",
-    image: "/placeholder.png",
-    description:
-      "Premium quality chicken breast, tender and juicy. Perfect for grilling, roasting, or pan-frying. Rich in protein and low in fat, making it an excellent choice for healthy meals.",
-    basePrice: 180, // price per 250g
-    rating: 4.5,
-    reviews: 128,
-    features: ["Antibiotic-free", "Farm fresh", "High protein", "Low fat content"],
-  },
-  "rohu-fish": {
-    id: "rohu-fish",
-    name: "Rohu Fish",
-    category: "fish",
-    subcategory: "Rohu",
-    image: "/placeholder.png",
-    description:
-      "Fresh water rohu fish, cleaned and cut into pieces. Rich in omega-3 fatty acids and protein. Perfect for Bengali fish curry or fried preparations.",
-    basePrice: 120,
-    rating: 4.3,
-    reviews: 89,
-    features: ["Fresh water fish", "Rich in Omega-3", "Cleaned & cut", "Bone-in pieces"],
-  },
-  "mutton-curry-cut": {
-    id: "mutton-curry-cut",
-    name: "Mutton Curry Cut",
-    category: "meat",
-    subcategory: "Mutton",
-    image: "/placeholder.png",
-    description:
-      "Fresh mutton cut into perfect pieces for curry preparation. Tender and flavorful meat from young goats. Ideal for traditional Indian curries and biryanis.",
-    basePrice: 450,
-    rating: 4.7,
-    reviews: 156,
-    features: ["Young goat meat", "Curry cut pieces", "Tender & flavorful", "Perfect for biryanis"],
-  },
-  "prawns-medium": {
-    id: "prawns-medium",
-    name: "Medium Prawns",
-    category: "fish",
-    subcategory: "Prawns",
-    image: "/placeholder.png",
-    description:
-      "Fresh medium-sized prawns, cleaned and deveined. Sweet and succulent taste perfect for curries, fries, or grilled preparations.",
-    basePrice: 280,
-    rating: 4.4,
-    reviews: 94,
-    features: ["Cleaned & deveined", "Medium size", "Sweet taste", "Versatile cooking"],
-  },
+interface ProductPageProps {
+  params: Promise<{ id: string }>;
 }
 
+// Weight options for conversion from 1kg base price
 const weightOptions = [
-  { value: "250g", label: "250g", multiplier: 1 },
-  { value: "500g", label: "500g", multiplier: 2 },
-  { value: "750g", label: "750g", multiplier: 3 },
-  { value: "1kg", label: "1kg", multiplier: 4 },
-]
+  { value: "250g", label: "250g", multiplier: 0.25 },
+  { value: "500g", label: "500g", multiplier: 0.5 },
+  { value: "750g", label: "750g", multiplier: 0.75 },
+  { value: "1kg", label: "1kg", multiplier: 1 },
+  { value: "1.5kg", label: "1.5kg", multiplier: 1.5 },
+  { value: "2kg", label: "2kg", multiplier: 2 },
+];
 
-export default function ProductPage({ params }: { params: { id: string } }) {
-  const product = productData[params.id]
-  const [selectedWeight, setSelectedWeight] = useState("250g")
-  const [quantity, setQuantity] = useState(1)
-  const { addItem, items } = useCart()
-  const { toast } = useToast()
-  const router = useRouter()
+export default function ProductPage({ params }: ProductPageProps) {
+  const { id } = use(params);
+  const [selectedWeight, setSelectedWeight] = useState("500g");
+  const [quantity, setQuantity] = useState(1);
+  const { addItem } = useCart();
+  const { getProductById, loading } = useProducts();
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const product = getProductById(id);
+
+  useEffect(() => {
+    if (!loading && !product) {
+      // Product not found, redirect to home after showing error
+      toast({
+        title: "Product not found",
+        description: "The product you're looking for doesn't exist.",
+        variant: "destructive",
+      });
+      router.push("/");
+    }
+  }, [product, loading, router, toast]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" />
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-xl sm:text-2xl font-bold mb-4">Product Not Found</h1>
-          <Link href="/">
-            <Button>Go Back Home</Button>
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
+            Product Not Found
+          </h1>
+          <p className="text-gray-600 mb-6">
+            The product you're looking for doesn't exist.
+          </p>
+          <Link href="/" className="text-red-600 hover:text-red-700">
+            Return to Home
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
-  const selectedWeightOption = weightOptions.find((w) => w.value === selectedWeight)
-  const currentPrice = product.basePrice * (selectedWeightOption?.multiplier || 1)
-
-  // Find existing cart item with same product and weight
-  const existingCartItem = items.find((item) => item.id.startsWith(product.id) && item.weight === selectedWeight)
-  const existingQuantity = existingCartItem?.quantity || 0
+  const selectedWeightOption =
+    weightOptions.find((w) => w.value === selectedWeight) || weightOptions[1];
+  const calculatedPrice = Math.round(
+    product.price * selectedWeightOption.multiplier
+  );
+  const totalPrice = calculatedPrice * quantity;
 
   const handleAddToCart = () => {
     addItem({
       id: product.id,
       name: product.name,
-      price: currentPrice,
-      quantity,
-      weight: selectedWeight,
+      price: calculatedPrice,
       image: product.image,
+      weight: selectedWeight,
+      quantity: quantity,
       category: product.category,
-    })
+    });
 
     toast({
-      title: "Added to Cart",
-      description: `${quantity}x ${product.name} (${selectedWeight}) added to cart`,
-    })
-  }
+      title: "Added to cart!",
+      description: `${quantity}x ${product.name} (${selectedWeight}) added to your cart.`,
+    });
+  };
 
-  const handleQuantityChange = (change: number) => {
-    const newQuantity = quantity + change
-    if (newQuantity >= 1 && newQuantity <= 10) {
-      setQuantity(newQuantity)
+  const adjustQuantity = (delta: number) => {
+    const newQuantity = quantity + delta;
+    if (newQuantity >= 1 && newQuantity <= 99) {
+      setQuantity(newQuantity);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center mb-4 sm:mb-6">
-          <button
-            onClick={() => {
-              if (window.history.length > 1) {
-                window.history.back()
-              } else {
-                router.push(`/category/${product.category}`)
-              }
-            }}
-            className="flex items-center hover:bg-red-50 transition-colors duration-200 px-2 py-1 rounded-md text-sm sm:text-base"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to {product.category}
-          </button>
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        {/* Back Button */}
+        <div className="mb-6 sm:mb-8">
+          <Link href={`/category/${product.category}`}>
+            <button className="flex items-center hover:bg-red-50 transition-colors duration-200 px-2 py-1 rounded-md text-sm sm:text-base">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to{" "}
+              {product.category === "meat" ? "Fresh Meat" : "Fresh Fish"}
+            </button>
+          </Link>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Product Image */}
-          <div className="space-y-4">
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-white shadow-md">
-              <Image
-                src={product.image || "/placeholder.png"}
-                alt={product.name}
-                fill
-                className="object-cover hover:scale-105 transition-transform duration-500"
-              />
-              <Badge className="absolute top-4 left-4 bg-red-600 hover:bg-red-700">{product.subcategory}</Badge>
-            </div>
+          <div className="animate-in fade-in-0 slide-in-from-left-4 duration-700">
+            <Card className="overflow-hidden">
+              <div className="relative h-64 sm:h-80 lg:h-96">
+                <Image
+                  src={product.image || "/placeholder.png"}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                />
+                <Badge className="absolute top-4 left-4 bg-red-600">
+                  {product.subcategory}
+                </Badge>
+                <Badge className="absolute top-4 right-4 bg-gray-800 text-white">
+                  {product.category}
+                </Badge>
+              </div>
+            </Card>
           </div>
 
           {/* Product Details */}
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 animate-in fade-in-0 slide-in-from-right-4 duration-500">
-                {product.name}
-              </h1>
-
-              {/* Rating */}
-              <div
-                className="flex items-center mb-4 animate-in fade-in-0 slide-in-from-right-4 duration-500"
-                style={{ animationDelay: "100ms" }}
-              >
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 text-sm text-gray-600">
-                  {product.rating} ({product.reviews} reviews)
-                </span>
-              </div>
-
-              <p
-                className="text-gray-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base animate-in fade-in-0 slide-in-from-right-4 duration-500"
-                style={{ animationDelay: "200ms" }}
-              >
-                {product.description}
-              </p>
-
-              {/* Features */}
-              <div
-                className="mb-4 sm:mb-6 animate-in fade-in-0 slide-in-from-right-4 duration-500"
-                style={{ animationDelay: "300ms" }}
-              >
-                <h3 className="font-semibold mb-3 text-sm sm:text-base">Key Features:</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {product.features.map((feature: string, index: number) => (
-                    <div key={index} className="flex items-center">
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2 flex-shrink-0"></span>
-                      <span className="text-xs sm:text-sm">{feature}</span>
+          <div
+            className="animate-in fade-in-0 slide-in-from-right-4 duration-700"
+            style={{ animationDelay: "200ms" }}
+          >
+            <div className="space-y-6">
+              {/* Product Title and Rating */}
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+                  {product.name}
+                </h1>
+                {product.rating > 0 && (
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < Math.floor(product.rating)
+                              ? "text-yellow-400 fill-current"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Price & Add to Cart */}
-            <Card
-              className="animate-in fade-in-0 slide-in-from-right-4 duration-500"
-              style={{ animationDelay: "400ms" }}
-            >
-              <CardContent className="p-4 sm:p-6">
-                <div className="text-2xl sm:text-3xl font-bold text-red-600 mb-4 sm:mb-6">
-                  ₹{currentPrice}
-                  <span className="text-base sm:text-lg text-gray-500 font-normal ml-2">per {selectedWeight}</span>
-                </div>
-
-                {/* Existing Cart Info */}
-                {existingQuantity > 0 && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center text-green-700">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      <span className="text-sm font-medium">
-                        {existingQuantity} item{existingQuantity > 1 ? "s" : ""} already in cart ({selectedWeight})
-                      </span>
-                    </div>
+                    <span className="text-sm text-gray-600">
+                      ({product.rating})
+                    </span>
                   </div>
                 )}
+              </div>
 
-                {/* Weight Selection */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Select Weight:</label>
-                    <Select value={selectedWeight} onValueChange={setSelectedWeight}>
-                      <SelectTrigger className="h-12 text-base">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {weightOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label} - ₹{product.basePrice * option.multiplier}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {/* Description */}
+              <div>
+                <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
+
+              {/* Features */}
+              {product.features.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    Key Features:
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.features.map((feature, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {feature}
+                      </Badge>
+                    ))}
                   </div>
+                </div>
+              )}
 
-                  {/* Quantity Selection */}
+              {/* Price */}
+              <div className="bg-red-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Quantity:</label>
-                    <div className="flex items-center space-x-3">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(-1)}
-                        disabled={quantity <= 1}
-                        className="h-10 w-10 hover:bg-red-50 hover:border-red-300 transition-colors duration-200"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="text-lg font-semibold w-8 text-center">{quantity}</span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleQuantityChange(1)}
-                        disabled={quantity >= 10}
-                        className="h-10 w-10 hover:bg-red-50 hover:border-red-300 transition-colors duration-200"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <p className="text-sm text-gray-600">
+                      Price per {selectedWeight}
+                    </p>
+                    <p className="text-2xl sm:text-3xl font-bold text-red-600">
+                      ₹{calculatedPrice}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Base price: ₹{product.price}/kg
+                    </p>
                   </div>
-
-                  {/* Add to Cart Button */}
-                  <Button
-                    onClick={handleAddToCart}
-                    className="w-full bg-red-600 hover:bg-red-700 h-12 text-base font-semibold transition-all duration-200 hover:shadow-lg transform hover:scale-[1.02]"
-                    size="lg"
-                  >
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart - ₹{currentPrice * quantity}
-                  </Button>
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                    In Stock
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Delivery Info */}
-            <Card
-              className="animate-in fade-in-0 slide-in-from-right-4 duration-500"
-              style={{ animationDelay: "500ms" }}
-            >
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-2 text-sm sm:text-base">Delivery Information</h3>
-                <div className="space-y-2 text-xs sm:text-sm text-gray-600">
-                  <p>• Same day delivery available</p>
-                  <p>• Flat delivery charge: ₹10</p>
-                  <p>• Cold chain maintained throughout</p>
-                  <p>• Fresh guarantee or money back</p>
+              {/* Weight Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Weight:
+                </label>
+                <Select
+                  value={selectedWeight}
+                  onValueChange={setSelectedWeight}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {weightOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label} - ₹
+                        {Math.round(product.price * option.multiplier)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Quantity Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantity:
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center border border-gray-300 rounded-lg">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustQuantity(-1)}
+                      disabled={quantity <= 1}
+                      className="h-10 w-10 p-0"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-12 text-center font-semibold">
+                      {quantity}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => adjustQuantity(1)}
+                      disabled={quantity >= 99}
+                      className="h-10 w-10 p-0"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Total: ₹{totalPrice}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Add to Cart Button */}
+              <Button
+                onClick={handleAddToCart}
+                size="lg"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 text-base"
+              >
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                Add to Cart - ₹{totalPrice}
+              </Button>
+
+              {/* Additional Info */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Delivery Information:
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• Fresh delivery within 2-4 hours</li>
+                  <li>• Free delivery on orders above ₹500</li>
+                  <li>• 100% quality guarantee</li>
+                  <li>• Easy returns if not satisfied</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Related Products Section */}
+        <RelatedProducts currentProduct={product} />
       </div>
     </div>
+  );
+}
+
+// Related Products Component
+function RelatedProducts({ currentProduct }: { currentProduct: Product }) {
+  const { getProductsBySubcategory } = useProducts();
+
+  const relatedProducts = getProductsBySubcategory(
+    currentProduct.category,
+    currentProduct.subcategory
   )
+    .filter((p) => p.id !== currentProduct.id)
+    .slice(0, 4);
+
+  if (relatedProducts.length === 0) return null;
+
+  return (
+    <section className="mt-12 lg:mt-16">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
+        More {currentProduct.subcategory} Products
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {relatedProducts.map((product, index) => (
+          <Link key={product.id} href={`/product/${product.id}`}>
+            <Card
+              className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group animate-in fade-in-0 slide-in-from-bottom-4"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="relative h-40 sm:h-48 overflow-hidden">
+                <Image
+                  src={product.image || "/placeholder.png"}
+                  alt={product.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <Badge className="absolute top-2 left-2 bg-red-600">
+                  {product.subcategory}
+                </Badge>
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold mb-2 text-sm group-hover:text-red-600 transition-colors duration-200">
+                  {product.name}
+                </h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-red-600">
+                    ₹{product.price}
+                  </span>
+                  <span className="text-xs text-gray-500">{product.unit}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 }

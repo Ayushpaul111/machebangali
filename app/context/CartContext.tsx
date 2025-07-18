@@ -1,112 +1,142 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useReducer, type ReactNode } from "react"
+import { createContext, useContext, useReducer, type ReactNode } from "react";
 
 export interface CartItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  weight: string
-  image: string
-  category: string
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  weight: string;
+  image: string;
+  category: string;
 }
 
 interface CartState {
-  items: CartItem[]
+  items: CartItem[];
 }
 
 type CartAction =
   | { type: "ADD_ITEM"; payload: CartItem }
   | { type: "REMOVE_ITEM"; payload: string }
   | { type: "UPDATE_QUANTITY"; payload: { id: string; quantity: number } }
-  | { type: "CLEAR_CART" }
+  | { type: "CLEAR_CART" };
 
 const CartContext = createContext<{
-  items: CartItem[]
-  addItem: (item: CartItem) => void
-  removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number) => void
-  clearCart: () => void
-  getTotalItems: () => number
-  getTotalPrice: () => number
-} | null>(null)
+  items: CartItem[];
+  addItem: (item: CartItem) => void;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+  clearCart: () => void;
+  getTotalItems: () => number;
+  getTotalPrice: () => number;
+} | null>(null);
+
+// Helper function to create unique cart item ID
+function createCartItemId(productId: string, weight: string): string {
+  return `${productId}-${weight}`;
+}
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
-    case "ADD_ITEM":
-      const existingItem = state.items.find(
-        (item) => item.id === action.payload.id && item.weight === action.payload.weight,
-      )
+    case "ADD_ITEM": {
+      const cartItemId = createCartItemId(
+        action.payload.id,
+        action.payload.weight
+      );
 
-      if (existingItem) {
+      // Check if item with same product ID and weight already exists
+      const existingItemIndex = state.items.findIndex(
+        (item) => item.id === cartItemId
+      );
+
+      if (existingItemIndex >= 0) {
+        // Update quantity of existing item
+        const updatedItems = [...state.items];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity:
+            updatedItems[existingItemIndex].quantity + action.payload.quantity,
+        };
+
         return {
           ...state,
-          items: state.items.map((item) =>
-            item.id === action.payload.id && item.weight === action.payload.weight
-              ? { ...item, quantity: item.quantity + action.payload.quantity }
-              : item,
-          ),
-        }
-      }
+          items: updatedItems,
+        };
+      } else {
+        // Add new item with unique cart ID
+        const newItem: CartItem = {
+          ...action.payload,
+          id: cartItemId, // Use the unique cart item ID
+        };
 
-      return {
-        ...state,
-        items: [...state.items, { ...action.payload, id: `${action.payload.id}-${action.payload.weight}` }],
+        return {
+          ...state,
+          items: [...state.items, newItem],
+        };
       }
+    }
 
     case "REMOVE_ITEM":
       return {
         ...state,
         items: state.items.filter((item) => item.id !== action.payload),
-      }
+      };
 
-    case "UPDATE_QUANTITY":
+    case "UPDATE_QUANTITY": {
+      const updatedItems = state.items.map((item) =>
+        item.id === action.payload.id
+          ? { ...item, quantity: action.payload.quantity }
+          : item
+      );
+
       return {
         ...state,
-        items: state.items.map((item) =>
-          item.id === action.payload.id ? { ...item, quantity: action.payload.quantity } : item,
-        ),
-      }
+        items: updatedItems,
+      };
+    }
 
     case "CLEAR_CART":
-      return { items: [] }
+      return { items: [] };
 
     default:
-      return state
+      return state;
   }
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, { items: [] })
+  const [state, dispatch] = useReducer(cartReducer, { items: [] });
 
   const addItem = (item: CartItem) => {
-    dispatch({ type: "ADD_ITEM", payload: item })
-  }
+    dispatch({ type: "ADD_ITEM", payload: item });
+  };
 
   const removeItem = (id: string) => {
-    dispatch({ type: "REMOVE_ITEM", payload: id })
-  }
+    dispatch({ type: "REMOVE_ITEM", payload: id });
+  };
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(id)
+      removeItem(id);
     } else {
-      dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } })
+      dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
     }
-  }
+  };
 
   const clearCart = () => {
-    dispatch({ type: "CLEAR_CART" })
-  }
+    dispatch({ type: "CLEAR_CART" });
+  };
 
   const getTotalItems = () => {
-    return state.items.reduce((total, item) => total + item.quantity, 0)
-  }
+    return state.items.reduce((total, item) => total + item.quantity, 0);
+  };
 
   const getTotalPrice = () => {
-    return state.items.reduce((total, item) => total + item.price * item.quantity, 0)
-  }
+    return state.items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+  };
 
   return (
     <CartContext.Provider
@@ -122,13 +152,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </CartContext.Provider>
-  )
+  );
 }
 
 export function useCart() {
-  const context = useContext(CartContext)
+  const context = useContext(CartContext);
   if (!context) {
-    throw new Error("useCart must be used within a CartProvider")
+    throw new Error("useCart must be used within a CartProvider");
   }
-  return context
+  return context;
 }
