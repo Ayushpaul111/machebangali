@@ -6,11 +6,11 @@ import {
   CategoriesResponse,
 } from "../types/product";
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbwAxwJl2Vkw06VlFxH0ZS4LvxyetSmWFt0_6AjYS46vDje74zjA6-LIBNgQDDSoY_wViw/exec";
+const API_URL = process.env.NEXT_PUBLIC_SHEET_API_URL;
 
 class ProductService {
-  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly cache: Map<string, { data: any; timestamp: number }> =
+    new Map();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private allProductsCache: CategoryData | null = null;
   private isLoading = false;
@@ -44,7 +44,7 @@ class ProductService {
     action: string,
     params?: Record<string, string>
   ): Promise<any> {
-    const url = new URL(API_URL);
+    const url = new URL(API_URL || "The sheet API URL is not set.");
     url.searchParams.set("action", action);
 
     if (params) {
