@@ -55,24 +55,31 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-12 sm:py-16 lg:py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-in fade-in-0 slide-in-from-top-4 duration-700">
+      <section
+        className="bg-gradient-to-r from-gray-800 via-gray-900 to-black py-12 sm:py-16 lg:py-20 relative"
+        style={{
+          backgroundImage: `url('./hero.webp')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-black opacity-50"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-in fade-in-0 slide-in-from-top-4 duration-700 text-gray-100">
             Fresh Meat & Fish
           </h1>
           <p
-            className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 animate-in fade-in-0 slide-in-from-top-4 duration-700"
+            className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 animate-in fade-in-0 slide-in-from-top-4 duration-700 text-gray-200"
             style={{ animationDelay: "200ms" }}
           >
             Premium quality delivered to your doorstep
           </p>
-          <Button
-            size="lg"
-            className="bg-white text-red-600 hover:bg-gray-100 text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3 animate-in fade-in-0 slide-in-from-top-4 duration-700"
+          <button
+            className="bg-white text-gray-900 hover:bg-gray-200 text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3 animate-in fade-in-0 slide-in-from-top-4 duration-700 rounded"
             style={{ animationDelay: "400ms" }}
           >
             Shop Now
-          </Button>
+          </button>
         </div>
       </section>
 
