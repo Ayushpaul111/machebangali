@@ -80,12 +80,14 @@ export default function HomePage() {
           >
             Premium quality delivered to your doorstep
           </p>
-          <button
-            className="bg-white text-gray-900 hover:bg-gray-200 text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3 animate-in fade-in-0 slide-in-from-top-4 duration-700 rounded"
-            style={{ animationDelay: "400ms" }}
-          >
-            Shop Now
-          </button>
+          <a href="#featured-products">
+            <button
+              className="bg-white text-gray-900 hover:bg-gray-200 text-sm sm:text-base px-6 sm:px-8 py-2 sm:py-3 animate-in fade-in-0 slide-in-from-top-4 duration-700 rounded"
+              style={{ animationDelay: "400ms" }}
+            >
+              Shop Now
+            </button>
+          </a>
         </div>
       </section>
 
@@ -129,7 +131,10 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-12 sm:py-16 lg:py-20 bg-white">
+      <section
+        className="py-12 sm:py-16 lg:py-20 bg-white"
+        id="featured-products"
+      >
         <div className="container mx-auto px-4">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center mb-8 sm:mb-12 animate-in fade-in-0 slide-in-from-top-4 duration-700">
             Featured Products
