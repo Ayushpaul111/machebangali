@@ -55,19 +55,25 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section
-        className="bg-gradient-to-r from-gray-800 via-gray-900 to-black py-12 sm:py-16 lg:py-20 relative"
-        style={{
-          backgroundImage: `url('./hero.webp')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div className="container mx-auto px-4 text-center relative z-10">
+      <section className="bg-black py-12 sm:py-16 lg:py-20 relative overflow-hidden">
+        {/* Background Image */}
+        <Image
+          src="/hero.webp"
+          alt="Fresh meat and fish"
+          fill
+          priority
+          className="object-cover z-0"
+        />
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black opacity-50 z-10"></div>
+
+        {/* Content */}
+        <div className="container mx-auto px-4 text-center relative z-20">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 animate-in fade-in-0 slide-in-from-top-4 duration-700 text-gray-100">
             Fresh Meat & Fish
           </h1>
+
           <p
             className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 animate-in fade-in-0 slide-in-from-top-4 duration-700 text-gray-200"
             style={{ animationDelay: "200ms" }}
