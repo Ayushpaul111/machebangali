@@ -1,67 +1,122 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useCart, type CartItem } from "../context/CartContext"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useCart, type CartItem } from "../context/CartContext";
+import { useRouter } from "next/navigation";
 
 interface OrderFormProps {
-  isOpen: boolean
-  onClose: () => void
-  cartItems: CartItem[]
-  total: number
+  isOpen: boolean;
+  onClose: () => void;
+  cartItems: CartItem[];
+  total: number;
 }
 
-export default function OrderForm({ isOpen, onClose, cartItems, total }: OrderFormProps) {
+export default function OrderForm({
+  isOpen,
+  onClose,
+  cartItems,
+  total,
+}: OrderFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     address: "",
     deliveryTime: "",
     notes: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { clearCart } = useCart()
-  const router = useRouter()
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { clearCart } = useCart();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // Debug: Log cart items to see their structure
+      console.log("Cart items:", cartItems);
 
-    // Create order data
-    const orderData = {
-      id: `ORD-${Date.now()}`,
-      items: cartItems,
-      customer: formData,
-      total,
-      deliveryCharge: 10,
-      subtotal: total - 10,
-      orderDate: new Date().toISOString(),
-      status: "confirmed",
+      // Prepare order data for your API
+      const orderData = {
+        customerInfo: {
+          name: formData.name,
+          phone: formData.phone,
+          tableNumber: formData.address, // Using address field as delivery address
+          deliveryTime: formData.deliveryTime,
+          notes: formData.notes,
+        },
+        items: cartItems.map((item) => ({
+          name: item.name,
+          weight: item.weight || "N/A",
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: item.price * item.quantity,
+        })),
+        total: total,
+      };
+
+      console.log("Order data being sent:", orderData);
+
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Store order data for success page
+        const successOrderData = {
+          id: `ORD-${Date.now()}`,
+          items: cartItems,
+          customer: formData,
+          total,
+          deliveryCharge: 10,
+          subtotal: total - 10,
+          orderDate: new Date().toISOString(),
+          status: "confirmed",
+        };
+        localStorage.setItem("lastOrder", JSON.stringify(successOrderData));
+
+        // Clear cart and redirect
+        clearCart();
+        router.push("/order-success");
+        onClose();
+      } else {
+        alert(`Order failed: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      alert("Failed to submit order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Store order data in localStorage for the success page
-    localStorage.setItem("lastOrder", JSON.stringify(orderData))
-
-    // Clear cart and redirect
-    clearCart()
-    router.push("/order-success")
-    onClose()
-  }
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const timeSlots = [
     "9:00 AM - 11:00 AM",
@@ -70,13 +125,15 @@ export default function OrderForm({ isOpen, onClose, cartItems, total }: OrderFo
     "3:00 PM - 5:00 PM",
     "5:00 PM - 7:00 PM",
     "7:00 PM - 9:00 PM",
-  ]
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto mx-4">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Order Details</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
+            Order Details
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,13 +182,22 @@ export default function OrderForm({ isOpen, onClose, cartItems, total }: OrderFo
             <Label htmlFor="deliveryTime" className="text-sm font-medium">
               Preferred Delivery Time *
             </Label>
-            <Select value={formData.deliveryTime} onValueChange={(value) => handleInputChange("deliveryTime", value)}>
+            <Select
+              value={formData.deliveryTime}
+              onValueChange={(value) =>
+                handleInputChange("deliveryTime", value)
+              }
+            >
               <SelectTrigger className="mt-1 h-10 sm:h-11 text-sm sm:text-base">
                 <SelectValue placeholder="Select time slot" />
               </SelectTrigger>
               <SelectContent>
                 {timeSlots.map((slot) => (
-                  <SelectItem key={slot} value={slot} className="text-sm sm:text-base">
+                  <SelectItem
+                    key={slot}
+                    value={slot}
+                    className="text-sm sm:text-base"
+                  >
                     {slot}
                   </SelectItem>
                 ))}
@@ -158,7 +224,9 @@ export default function OrderForm({ isOpen, onClose, cartItems, total }: OrderFo
               <span>Total Amount:</span>
               <span className="font-bold">₹{total.toFixed(2)}</span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600">Payment will be collected on delivery</p>
+            <p className="text-xs sm:text-sm text-gray-600">
+              Payment will be collected on delivery
+            </p>
           </div>
 
           <div className="flex space-x-3 pt-2">
@@ -181,5 +249,5 @@ export default function OrderForm({ isOpen, onClose, cartItems, total }: OrderFo
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

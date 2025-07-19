@@ -58,9 +58,14 @@ export async function POST(req) {
 
     const sheets = await getGoogleSheetsClient();
 
-    // Format the order items with each item on a new line
+    // Format the order items with each item on a new line including weight
     const itemsList = items
-      .map((item) => `• ${item.name} x${item.quantity} (₹${item.totalPrice})`)
+      .map(
+        (item) =>
+          `• ${item.name} (${item.weight || "N/A"}) x${item.quantity} - ₹${
+            item.totalPrice
+          }`
+      )
       .join("\n");
 
     // Format the current date and time
@@ -68,15 +73,17 @@ export async function POST(req) {
       timeZone: "Asia/Kolkata",
     });
 
-    // Prepare row data
+    // Prepare row data - updated to match form fields
     const rowData = [
       [
         orderDate,
         customerInfo.name,
         customerInfo.phone,
-        customerInfo.tableNumber,
+        customerInfo.tableNumber, // This is actually the delivery address from form
+        customerInfo.deliveryTime || "Not specified",
         itemsList,
         `₹${total}`,
+        customerInfo.notes || "",
         "Pending", // Initial order status
       ],
     ];
@@ -92,7 +99,8 @@ export async function POST(req) {
           {
             success: false,
             message:
-              "Service account doesn't have access to the spreadsheet. Please share the spreadsheet with " +
+              "Service account doesn't have access to the spreadsheet. " +
+              "Please share the spreadsheet with " +
               process.env.GOOGLE_CLIENT_EMAIL,
           },
           { status: 403 }
@@ -101,10 +109,10 @@ export async function POST(req) {
       throw error;
     }
 
-    // Add row to Google Sheet
+    // Add row to Google Sheet - updated range to include more columns
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
-      range: "Orders!A:G",
+      range: "Orders!A:I", // Expanded to include delivery time and notes
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: rowData,
