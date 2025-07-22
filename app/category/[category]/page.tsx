@@ -61,7 +61,7 @@ export default function CategoryPage({ params }: CategoryPageProps) {
         <div className="text-center">
           {/* <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" /> */}
           <img
-            src="/macheBangali.webp"
+            src="./macheBangali.webp"
             alt="Mache Bangali"
             className="h-20 w-20 animate-pulse mx-auto mb-4"
           />
