@@ -251,7 +251,6 @@ Thank you for your order!
               </p>
               <p>📞 Our delivery partner will call you before arrival</p>
               <p>💰 Payment will be collected on delivery (Cash/UPI)</p>
-              <p>🔄 Easy returns if you're not satisfied</p>
             </div>
           </CardContent>
         </Card>
