@@ -86,7 +86,7 @@ export default function Header() {
             <Link href="/" className="flex items-center ">
               <div className="text-xl lg:text-2xl font-bold text-red-600 flex items-center space-x-2">
                 <img
-                  src="./machebangali.webp"
+                  src="/machebangali.webp"
                   alt="Mache Bangali"
                   className="h-10 w-10"
                 />
