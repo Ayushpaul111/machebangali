@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCart, type CartItem } from "../context/CartContext";
 import { useRouter } from "next/navigation";
+import confetti from "canvas-confetti";
 
 interface OrderFormProps {
   isOpen: boolean;
@@ -97,10 +98,59 @@ export default function OrderForm({
       }
 
       const result = await response.json();
+      const fireConfetti = () => {
+        confetti({
+          particleCount: 300,
+          spread: 90,
+          origin: { x: 1, y: 0.9 },
+        });
+
+        confetti({
+          particleCount: 300,
+          spread: 90,
+          origin: { x: 0, y: 0.9 },
+        });
+      };
 
       if (result.success) {
+        // Generate order ID and create order data for success page
+        const orderId = `ORD${Date.now()}`;
+        const deliveryCharge = 10;
+        const subtotal = total - deliveryCharge;
+
+        const successOrderData = {
+          id: orderId,
+          items: cartItems.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            weight: item.weight || "N/A",
+            price: item.price,
+          })),
+          customer: {
+            name: formData.name,
+            phone: formData.phone,
+            address: formData.address,
+            deliveryTime: formData.deliveryTime || "ASAP",
+            notes: formData.notes,
+          },
+          total: total,
+          deliveryCharge: deliveryCharge,
+          subtotal: subtotal,
+          orderDate: new Date().toISOString(),
+          status: "confirmed",
+        };
+
+        // Save to localStorage with expiry (1 hour)
+        const orderWithExpiry = {
+          data: successOrderData,
+          expiry: Date.now() + 60 * 60 * 1000, // 1 hour from now
+        };
+
+        localStorage.setItem("lastOrder", JSON.stringify(orderWithExpiry));
+
         clearCart();
         router.push("/order-success");
+        fireConfetti();
         onClose();
       } else {
         setError(`Order failed: ${result.message || "Unknown error"}`);
@@ -120,7 +170,7 @@ export default function OrderForm({
 
   // Dynamic time slots based on current time
   const generateTimeSlots = () => {
-    const now = new Date(); // Use real-time date in production
+    const now = new Date();
     const currentHour = now.getHours();
     const currentMinutes = now.getMinutes();
     const currentTimeInHours = currentHour + currentMinutes / 60;
@@ -135,7 +185,7 @@ export default function OrderForm({
     ];
 
     const todaySlots = baseSlots
-      .filter((slot) => slot.start > currentTimeInHours + 0.5) // 30-minute buffer
+      .filter((slot) => slot.start > currentTimeInHours + 0.5)
       .map((slot) => ({
         value: `Today ${slot.label}`,
         label: slot.label,
@@ -153,7 +203,7 @@ export default function OrderForm({
 
   // Set default delivery time to the first available slot
   useEffect(() => {
-    if (formData.deliveryTime) return; // Skip if already set
+    if (formData.deliveryTime) return;
     const firstAvailableSlot =
       todaySlots[0]?.value || tomorrowSlots[0]?.value || "";
     if (firstAvailableSlot) {
@@ -161,7 +211,7 @@ export default function OrderForm({
     } else {
       setError("No delivery time slots available. Please try again later.");
     }
-  }, [todaySlots, tomorrowSlots]);
+  }, [todaySlots, tomorrowSlots, formData.deliveryTime]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -189,108 +239,77 @@ export default function OrderForm({
       `}</style>
       <DialogContent className="w-[90vw] max-w-[400px] sm:max-w-[500px] lg:max-w-[600px] min-h-[400px] max-h-[80vh] overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 rounded-2xl mx-auto custom-scroll">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg lg:text-xl font-semibold">
-            Order Details
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold">Order Details</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="text-red-500 text-sm bg-red-50 p-2 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
-          <div>
-            <Label htmlFor="name" className="text-sm sm:text-base font-medium">
-              Full Name *
-            </Label>
+
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name *</Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter your full name"
               required
-              className="mt-1 h-9 m:h-10 lg:h-11 text-sm sm:text-base"
             />
           </div>
 
-          <div>
-            <Label htmlFor="phone" className="text-sm sm:text-base font-medium">
-              Phone Number *
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number *</Label>
             <Input
               id="phone"
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange("phone", e.target.value)}
+              placeholder="10-digit phone number"
               required
-              className="mt-1 h-9 sm:h-10 lg:h-11 text-sm sm:text-base"
             />
           </div>
 
-          <div>
-            <Label
-              htmlFor="address"
-              className="text-sm sm:text-base font-medium"
-            >
-              Delivery Address *
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="address">Delivery Address *</Label>
             <Textarea
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
+              placeholder="Enter your complete delivery address"
               rows={3}
               required
-              className="mt-1 text-sm sm:text-base resize-none"
             />
           </div>
 
-          <div>
-            <Label
-              htmlFor="deliveryTime"
-              className="text-sm sm:text-base font-medium"
-            >
-              Preferred Delivery Time *
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="deliveryTime">Preferred Delivery Time</Label>
             <Select
               value={formData.deliveryTime}
               onValueChange={(value) =>
                 handleInputChange("deliveryTime", value)
               }
             >
-              <SelectTrigger className="mt-1 h-9 sm:h-10 lg:h-11 text-sm sm:text-base">
-                <SelectValue placeholder="Select time slot" />
+              <SelectTrigger>
+                <SelectValue placeholder="Select delivery time" />
               </SelectTrigger>
-              <SelectContent className="custom-scroll max-h-[40vh]">
-                {todaySlots.length > 0 ? (
+              <SelectContent>
+                {todaySlots.length > 0 && (
                   <SelectGroup>
                     <SelectLabel>Today</SelectLabel>
                     {todaySlots.map((slot) => (
-                      <SelectItem
-                        key={slot.value}
-                        value={slot.value}
-                        className="text-sm sm:text-base"
-                      >
+                      <SelectItem key={slot.value} value={slot.value}>
                         {slot.label}
                       </SelectItem>
                     ))}
                   </SelectGroup>
-                ) : (
-                  <SelectItem
-                    value="no-today-slots"
-                    disabled
-                    className="text-sm sm:text-base text-gray-500"
-                  >
-                    No slots available today
-                  </SelectItem>
                 )}
                 <SelectGroup>
                   <SelectLabel>Tomorrow</SelectLabel>
                   {tomorrowSlots.map((slot) => (
-                    <SelectItem
-                      key={slot.value}
-                      value={slot.value}
-                      className="text-sm sm:text-base"
-                    >
+                    <SelectItem key={slot.value} value={slot.value}>
                       {slot.label}
                     </SelectItem>
                   ))}
@@ -299,47 +318,49 @@ export default function OrderForm({
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="notes" className="text-sm sm:text-base font-medium">
-              Additional Notes (Optional)
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Special Instructions (Optional)</Label>
             <Textarea
               id="notes"
               value={formData.notes}
               onChange={(e) => handleInputChange("notes", e.target.value)}
+              placeholder="Any special requests or notes"
               rows={2}
-              placeholder="Any special instructions..."
-              className="mt-1 text-sm sm:text-base resize-none"
             />
           </div>
 
-          <div className="border-t pt-4">
-            <div className="flex justify-between mb-2 text-sm sm:text-base">
-              <span>Total Amount:</span>
-              <span className="font-bold">₹{total.toFixed(2)}</span>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-2">Order Summary</h3>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>₹{(total - 10).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Delivery:</span>
+                <span>₹10.00</span>
+              </div>
+              <div className="flex justify-between font-bold border-t pt-1">
+                <span>Total:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Payment will be collected on delivery
-            </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <div className="flex gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 bg-transparent h-9 sm:h-10 lg:h-11 text-sm sm:text-base hover:bg-red-50 hover:border-red-300 transition-colors duration-200 rounded-full"
+              className="flex-1"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                !formData.deliveryTime ||
-                formData.deliveryTime === "no-today-slots"
-              }
-              className="flex-1 bg-red-600 hover:bg-red-700 h-9 sm:h-10 lg:h-11 text-sm sm:text-base transition-all duration-200 hover:shadow-lg rounded-full"
+              className="flex-1 bg-red-600 hover:bg-red-700"
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Placing Order..." : "Place Order"}
             </Button>

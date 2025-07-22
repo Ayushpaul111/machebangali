@@ -1,3 +1,4 @@
+// app/order-success/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -32,9 +33,34 @@ export default function OrderSuccessPage() {
   const [orderData, setOrderData] = useState<OrderData | null>(null);
 
   useEffect(() => {
-    const storedOrder = localStorage.getItem("lastOrder");
-    if (storedOrder) {
-      setOrderData(JSON.parse(storedOrder));
+    try {
+      const storedOrderString = localStorage.getItem("lastOrder");
+
+      if (storedOrderString) {
+        const storedOrder = JSON.parse(storedOrderString);
+
+        // Check if stored data has expiry structure
+        if (storedOrder.data && storedOrder.expiry) {
+          // Check if order data has expired (1 hour)
+          if (Date.now() > storedOrder.expiry) {
+            // Order data expired, remove it
+            localStorage.removeItem("lastOrder");
+            console.log("Order data expired and removed");
+            return;
+          }
+
+          // Data is valid, use it
+          setOrderData(storedOrder.data);
+        } else {
+          // Legacy format without expiry, treat as expired
+          localStorage.removeItem("lastOrder");
+          console.log("Legacy order data removed");
+        }
+      }
+    } catch (error) {
+      console.error("Error reading order data:", error);
+      // If there's any error, clean up localStorage
+      localStorage.removeItem("lastOrder");
     }
   }, []);
 
@@ -71,13 +97,13 @@ Delivery Charge: ₹${orderData.deliveryCharge.toFixed(2)}
 Total: ₹${orderData.total.toFixed(2)}
 
 Thank you for your order!
-    `;
+`;
 
     const blob = new Blob([receipt], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Mache Bangali-Receipt-${orderData.id}.txt`;
+    a.download = `Mache-Bangali-Receipt-${orderData.id}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -90,8 +116,11 @@ Thank you for your order!
         <Card className="w-full max-w-md shadow-lg">
           <CardContent className="text-center p-6">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">
-              No Order Found
+              No Order Found In last 1 hour
             </h1>
+            <p className="text-gray-600 mb-6">
+              You haven't placed any orders recently.
+            </p>
             <Link href="/">
               <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
                 Go Home
@@ -157,7 +186,7 @@ Thank you for your order!
               </div>
             </div>
 
-            {/* Items Ordered */}
+            {/* Order Items */}
             <div>
               <h3 className="font-semibold text-base sm:text-lg mb-3">
                 Items Ordered
@@ -166,30 +195,28 @@ Thank you for your order!
                 {orderData.items.map((item, index) => (
                   <div
                     key={index}
-                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 border-b gap-2"
+                    className="flex justify-between items-center bg-gray-50 p-3 rounded-lg"
                   >
-                    <div>
-                      <p className="font-medium text-sm sm:text-base">
-                        {item.name}
-                      </p>
-                      <p className="text-xs sm:text-sm text-gray-600">
+                    <div className="text-sm sm:text-base">
+                      <p className="font-medium">{item.name}</p>
+                      <p className="text-gray-600 text-xs sm:text-sm">
                         {item.weight} × {item.quantity}
                       </p>
                     </div>
-                    <p className="font-semibold text-sm sm:text-base">
+                    <span className="font-semibold text-sm sm:text-base">
                       ₹{(item.price * item.quantity).toFixed(2)}
-                    </p>
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Bill Summary */}
-            <div className="border-t pt-4">
+            <div>
               <h3 className="font-semibold text-base sm:text-lg mb-3">
                 Bill Summary
               </h3>
-              <div className="space-y-2 text-sm sm:text-base">
+              <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm sm:text-base">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span>₹{orderData.subtotal.toFixed(2)}</span>
