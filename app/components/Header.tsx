@@ -83,9 +83,16 @@ export default function Header() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="text-xl lg:text-2xl font-bold text-red-600">
-                Mache<span className="text-gray-800">Bangali</span>
+            <Link href="/" className="flex items-center ">
+              <div className="text-xl lg:text-2xl font-bold text-red-600 flex items-center space-x-2">
+                <img
+                  src="/machebangali.webp"
+                  alt="Mache Bangali"
+                  className="h-10 w-10"
+                />
+                <div>
+                  মাছে&nbsp;<span className="text-gray-800">বাঙালি</span>
+                </div>
               </div>
             </Link>
 

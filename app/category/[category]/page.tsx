@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useProducts } from "../../context/ProductContext";
 import { Product } from "@/types/product";
 
@@ -43,9 +43,6 @@ export default function CategoryPage({ params }: CategoryPageProps) {
   const categoryProducts = getProductsByCategory(
     unwrappedParams.category as "meat" | "fish"
   );
-  const subcategories = getSubcategories(
-    unwrappedParams.category as "meat" | "fish"
-  );
   const categoryName =
     unwrappedParams.category === "meat" ? "Fresh Meat" : "Fresh Fish";
 
@@ -62,7 +59,12 @@ export default function CategoryPage({ params }: CategoryPageProps) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" />
+          {/* <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-red-600" /> */}
+          <img
+            src="/macheBangali.webp"
+            alt="Mache Bangali"
+            className="h-20 w-20 animate-pulse mx-auto mb-4"
+          />
           <p className="text-gray-600">Loading {categoryName}...</p>
         </div>
       </div>

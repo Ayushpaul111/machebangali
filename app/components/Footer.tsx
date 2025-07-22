@@ -11,7 +11,7 @@ export default function Footer() {
           {/* Branding Section - Always First */}
           <div className="order-1 md:order-1">
             <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Mache Bangali
+              মাছে বাঙালি
             </h3>
             <p className="text-sm text-gray-600 leading-relaxed md:max-w-xs">
               Bringing fresh meat and fish straight to your doorstep hygienic
