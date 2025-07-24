@@ -1,4 +1,3 @@
-// app/order-success/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -113,7 +112,7 @@ Thank you for your order!
   if (!orderData) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-lg">
+        <Card className="w-full max-w-md">
           <CardContent className="text-center p-6">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">
               No Order Found In last 1 hour
@@ -121,11 +120,11 @@ Thank you for your order!
             <p className="text-gray-600 mb-6">
               You haven't placed any orders recently.
             </p>
-            <Link href="/">
-              <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
-                Go Home
+            <div className="text-center">
+              <Button asChild>
+                <Link href="/">Order now</Link>
               </Button>
-            </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
