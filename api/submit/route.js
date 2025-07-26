@@ -5,9 +5,7 @@ import { NextResponse } from "next/server";
 // Initialize Google Sheets client
 async function getGoogleSheetsClient() {
   try {
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY
-      ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n")
-      : undefined;
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n");
 
     if (!privateKey) {
       throw new Error("Google private key is not configured");
