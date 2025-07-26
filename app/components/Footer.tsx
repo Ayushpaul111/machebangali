@@ -84,7 +84,7 @@ export default function Footer() {
               href="https://ayushpaul.dev"
               className="bg-clip-text text-transparent bg-gradient-to-br from-[#723FCD] to-[#DB9FF5] font-semibold"
             >
-              Ehike
+              Ehike.
             </a>
           </p>
         </div>
