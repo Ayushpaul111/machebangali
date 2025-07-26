@@ -310,9 +310,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>• Fresh delivery within 2-4 hours</li>
-                  <li>• Free delivery on orders above ₹500</li>
                   <li>• 100% quality guarantee</li>
-                  <li>• Easy returns if not satisfied</li>
                 </ul>
               </div>
             </div>

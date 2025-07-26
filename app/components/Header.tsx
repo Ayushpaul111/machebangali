@@ -91,7 +91,7 @@ export default function Header() {
                   className="h-10 w-10"
                 />
                 <div>
-                  মাছে&nbsp;<span className="text-gray-800">বাঙালি</span>
+                  মাছে&nbsp;<span className="text-gray-800">বাঙ্গালী</span>
                 </div>
               </div>
             </Link>
