@@ -2,7 +2,7 @@
 
 import type React from "react";
 import Link from "next/link";
-import { Search, ShoppingCart, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -289,6 +289,14 @@ export default function Header() {
               <span className="mr-3">🐟</span>
               Fresh Fish
             </Link>
+            <a href="tel:+919732266082">
+              <div className="flex items-center text-gray-700 hover:text-red-600 py-3 px-4 rounded-lg hover:bg-red-50 transition-all duration-200 font-medium text-lg">
+                <Phone className="h-4 w-4 text-red-600 ml-1 mr-4" />
+                <p className="hover:text-red-600 transition-colors text-base">
+                  Call
+                </p>
+              </div>
+            </a>
           </div>
 
           {/* Mobile Cart Summary */}

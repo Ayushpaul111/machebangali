@@ -53,6 +53,9 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   const product = getProductById(id);
 
+  // Check if product has fixed quantity (name/title ends with *)
+  const isFixedQuantity = product?.description?.endsWith("*") ?? false;
+
   useEffect(() => {
     if (!loading && !product) {
       // Product not found, redirect to home after showing error
@@ -96,9 +99,12 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   const selectedWeightOption =
     weightOptions.find((w) => w.value === selectedWeight) || weightOptions[1];
-  const calculatedPrice = Math.round(
-    product.price * selectedWeightOption.multiplier
-  );
+
+  // For fixed quantity products, use the price as is (already per unit)
+  const calculatedPrice = isFixedQuantity
+    ? product.price
+    : Math.round(product.price * selectedWeightOption.multiplier);
+
   const totalPrice = calculatedPrice * quantity;
 
   const handleAddToCart = () => {
@@ -107,14 +113,16 @@ export default function ProductPage({ params }: ProductPageProps) {
       name: product.name,
       price: calculatedPrice,
       image: product.image,
-      weight: selectedWeight,
+      weight: isFixedQuantity ? product.description : selectedWeight,
       quantity: quantity,
       category: product.category,
     });
 
     toast({
       title: "Added to cart!",
-      description: `${quantity}x ${product.name} (${selectedWeight}) added to your cart.`,
+      description: `${quantity}x ${product.name} ${
+        isFixedQuantity ? "" : `(${selectedWeight})`
+      } added to your cart.`,
     });
   };
 
@@ -124,6 +132,11 @@ export default function ProductPage({ params }: ProductPageProps) {
       setQuantity(newQuantity);
     }
   };
+
+  // Clean up the name by removing the asterisk for display
+  const displayDescription = isFixedQuantity
+    ? product.description.slice(0, -1).trim()
+    : product.description;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -195,7 +208,7 @@ export default function ProductPage({ params }: ProductPageProps) {
               {/* Description */}
               <div>
                 <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
-                  {product.description}
+                  {isFixedQuantity ? displayDescription : product.description}
                 </p>
               </div>
 
@@ -220,14 +233,18 @@ export default function ProductPage({ params }: ProductPageProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">
-                      Price per {selectedWeight}
+                      {isFixedQuantity
+                        ? `Price per ${displayDescription}`
+                        : `Price per ${selectedWeight}`}
                     </p>
                     <p className="text-2xl sm:text-3xl font-bold text-red-600">
                       ₹{calculatedPrice}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Base price: ₹{product.price}/kg
-                    </p>
+                    {!isFixedQuantity && (
+                      <p className="text-xs text-gray-500">
+                        Base price: ₹{product.price}/kg
+                      </p>
+                    )}
                   </div>
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     In Stock
@@ -235,28 +252,30 @@ export default function ProductPage({ params }: ProductPageProps) {
                 </div>
               </div>
 
-              {/* Weight Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Weight:
-                </label>
-                <Select
-                  value={selectedWeight}
-                  onValueChange={setSelectedWeight}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {weightOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label} - ₹
-                        {Math.round(product.price * option.multiplier)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Weight Selection - Only show if not fixed quantity */}
+              {!isFixedQuantity && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Weight:
+                  </label>
+                  <Select
+                    value={selectedWeight}
+                    onValueChange={setSelectedWeight}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {weightOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label} - ₹
+                          {Math.round(product.price * option.multiplier)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Quantity Selection */}
               <div>
@@ -287,12 +306,13 @@ export default function ProductPage({ params }: ProductPageProps) {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600">
                     Total: ₹{totalPrice}
-                  </div>
+                  </span>
                 </div>
               </div>
 
+              {/* Add to Cart Button */}
               {/* Add to Cart Button */}
               <Button
                 onClick={handleAddToCart}
@@ -309,15 +329,14 @@ export default function ProductPage({ params }: ProductPageProps) {
                   Delivery Information:
                 </h4>
                 <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Fresh delivery within 2-4 hours</li>
+                  <li>• Fresh delivery available</li>
+                  <li>• Same day delivery available</li>
                   <li>• 100% quality guarantee</li>
                 </ul>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Related Products Section */}
         <RelatedProducts currentProduct={product} />
       </div>
     </div>
